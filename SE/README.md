@@ -1,126 +1,126 @@
 # SE Framework 
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-SE框架是基于SWE-agent的多样性实验系统，通过多次迭代和算子策略生成不同的解决方案。
+The SE framework is a diversity experimental system based on SWE-agent that generates different solutions through multiple iterations and operator strategies.
 
-### 立即使用
+### Immediate Use
 
 ```bash
-# 1. 快速演示 (推荐第一次使用)
+# 1. Quick demo (recommended for first-time use)
 python SE/basic_run.py --mode demo
 
-# 2. 执行实验 (需要配置API key)
+# 2. Execute experiment (requires API key configuration)
 python SE/basic_run.py --mode execute
 
-# 3. 使用自定义配置
+# 3. Use custom configuration
 python SE/basic_run.py --config SE/configs/se_configs/test_deepseek_se.yaml --mode execute
 ```
 
-### 运行要求
+### Runtime Requirements
 
-- **工作目录**: 必须在项目根目录 `/home/uaih3k9x/630_swe` 执行
-- **API配置**: 需要在配置文件中设置有效的API key
-- **依赖**: 需要安装SWE-agent和相关依赖
+- **Working Directory**: Must be executed in the project root directory `/home/uaih3k9x/630_swe`
+- **API Configuration**: Valid API key must be set in configuration file
+- **Dependencies**: SWE-agent and related dependencies must be installed
 
-## 🎯 核心特性
+## 🎯 Core Features
 
-### 多迭代执行
-- 对每个问题执行多次不同的解决尝试
-- 每次迭代使用不同的配置和策略
-- 自动生成时间戳目录避免冲突
+### Multi-iteration Execution
+- Execute multiple different solution attempts for each problem
+- Each iteration uses different configurations and strategies
+- Automatically generate timestamped directories to avoid conflicts
 
-### 算子系统
-- **TemplateOperator**: 生成个性化系统提示
-- **FilterOperator**: 生成历史过滤配置
-- 模块化设计，易于扩展新算子
+### Operator System
+- **TemplateOperator**: Generate personalized system prompts
+- **FilterOperator**: Generate historical filtering configurations
+- Modular design, easy to extend new operators
 
-### 智能轨迹处理
-- 自动压缩轨迹文件，节省75%-87%存储空间
-- 智能提取问题描述为`.problem`文件
-- LLM驱动的轨迹分析和总结
+### Intelligent Trajectory Processing
+- Automatically compress trajectory files, saving 75%-87% storage space
+- Intelligently extract problem descriptions as `.problem` files
+- LLM-driven trajectory analysis and summarization
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 SE/
-├── basic_run.py              # 主入口 - 多迭代执行器
-├── configs/                  # 配置文件目录
-│   ├── se_configs/           # SE主配置
-│   └── base_configs/         # SWE-agent基础配置
-├── core/                     # 核心功能模块
-│   ├── swe_iterator.py       # SWE-agent迭代运行器
-│   └── utils/               # 工具函数
-├── operators/               # 算子系统
-│   ├── base.py              # 算子基类
-│   └── registry.py          # 算子注册管理
-├── instances/               # 测试实例
-└── trajectories/            # 执行结果输出
+├── basic_run.py              # Main entry - multi-iteration executor
+├── configs/                  # Configuration files directory
+│   ├── se_configs/           # SE main configurations
+│   └── base_configs/         # SWE-agent base configurations
+├── core/                     # Core functionality modules
+│   ├── swe_iterator.py       # SWE-agent iteration runner
+│   └── utils/               # Utility functions
+├── operators/               # Operator system
+│   ├── base.py              # Operator base class
+│   └── registry.py          # Operator registration management
+├── instances/               # Test instances
+└── trajectories/            # Execution result output
 ```
 
-## 🔧 配置说明
+## 🔧 Configuration Guide
 
-### SE主配置文件 (se_configs/*.yaml)
+### SE Main Configuration Files (se_configs/*.yaml)
 
 ```yaml
-# 模型配置
+# Model configuration
 model:
   name: "anthropic/claude-sonnet-4-20250514"
   api_base: "your_api_base"
   api_key: "your-api-key"
 
-# 实例配置
+# Instance configuration
 instances:
   json_file: "SE/instances/test.json"
   key: "instances"
 
-# 输出配置
+# Output configuration
 output_dir: "SE/trajectories/experiment_001"
 
-# 策略编排 - 定义多次迭代
+# Strategy orchestration - define multiple iterations
 strategy:
   iterations:
-    - base_config: "test_claude"      # 第1次
+    - base_config: "test_claude"      # 1st iteration
       operator: null
-    - base_config: "baseconfig1"      # 第2次 
+    - base_config: "baseconfig1"      # 2nd iteration
       operator: null
-    - base_config: "test_claude"      # 第3次
+    - base_config: "test_claude"      # 3rd iteration
       operator: "Crossover"
 ```
 
-## 📊 输出结构
+## 📊 Output Structure
 
-每次运行生成唯一的输出目录：
+Each run generates a unique output directory:
 
 ```
 SE/trajectories/test_20250714_123456/
-├── iteration_1/                    # 第一次迭代
+├── iteration_1/                    # First iteration
 │   ├── instance_name/
-│   │   ├── instance.traj           # 原始轨迹
-│   │   ├── instance.tra            # 压缩轨迹 (节省80%+)
-│   │   ├── instance.problem        # 问题描述
-│   │   └── instance.pred           # 预测结果
-│   └── preds.json                  # 批次结果汇总
-├── iteration_2/                    # 第二次迭代
-└── se_framework.log                # 框架日志
+│   │   ├── instance.traj           # Original trajectory
+│   │   ├── instance.tra            # Compressed trajectory (saves 80%+)
+│   │   ├── instance.problem        # Problem description
+│   │   └── instance.pred           # Prediction results
+│   └── preds.json                  # Batch results summary
+├── iteration_2/                    # Second iteration
+└── se_framework.log                # Framework logs
 ```
 
-## 🛠️ 开发指南
+## 🛠️ Development Guide
 
-### 测试系统
+### Testing System
 
 ```bash
-# 运行测试套件
+# Run test suite
 python SE/test/run_operator_tests.py
 
-# 测试特定算子
+# Test specific operator
 python SE/test/test_alternative_strategy.py
 
-# 算子开发测试
+# Operator development testing
 python SE/operator_dev.py
 ```
 
-### 创建新算子
+### Creating New Operators
 
 ```python
 from SE.operators import TemplateOperator, register_operator
@@ -133,57 +133,57 @@ class MyOperator(TemplateOperator):
         return "MY CUSTOM STRATEGY"
     
     def _generate_content(self, instance_info, problem_description, trajectory_data):
-        # 实现生成逻辑
-        return "生成的策略内容"
+        # Implement generation logic
+        return "Generated strategy content"
 
-# 注册算子
+# Register operator
 register_operator("my_operator", MyOperator)
 ```
 
-## 📋 使用说明
+## 📋 Usage Instructions
 
-### 第一次使用
+### First-time Use
 
-1. **运行演示模式**：`python SE/basic_run.py --mode demo`
-2. **阅读输出结构**：了解生成的文件和目录
-3. **配置API key**：在配置文件中设置有效的API密钥
-4. **执行实验**：`python SE/basic_run.py --mode execute`
+1. **Run demo mode**: `python SE/basic_run.py --mode demo`
+2. **Read output structure**: Understand the generated files and directories
+3. **Configure API key**: Set valid API key in configuration file
+4. **Execute experiment**: `python SE/basic_run.py --mode execute`
 
-### 自定义实验
+### Custom Experiments
 
-1. **创建配置文件**：复制并修改`SE/configs/se_configs/`中的示例
-2. **配置实例**：在`SE/instances/`中准备测试实例
-3. **运行实验**：使用`--config`参数指定配置文件
+1. **Create configuration file**: Copy and modify examples from `SE/configs/se_configs/`
+2. **Configure instances**: Prepare test instances in `SE/instances/`
+3. **Run experiment**: Use `--config` parameter to specify configuration file
 
-## 🔗 相关文档
+## 🔗 Related Documentation
 
-- 详细开发指南：`SE/test/README.md`
-- 学习路径：`SE/LEARNING_GUIDE.md`
-- 开发指南：`SE/DEVELOPMENT_GUIDE.md`
-- 项目架构：根目录的`CLAUDE.md`
+- Detailed development guide: `SE/test/README.md`
+- Learning path: `SE/LEARNING_GUIDE.md`
+- Development guide: `SE/DEVELOPMENT_GUIDE.md`
+- Project architecture: `CLAUDE.md` in root directory
 
-## ⚠️ 注意事项
+## ⚠️ Important Notes
 
-- 所有SE相关命令必须在项目根目录执行
-- 配置文件中的路径相对于项目根目录
-- 需要配置有效的API key才能执行实验
-- 演示模式不会消耗API额度，适合测试
+- All SE-related commands must be executed in the project root directory
+- Paths in configuration files are relative to the project root directory
+- Valid API key configuration is required to execute experiments
+- Demo mode does not consume API quota, suitable for testing
 
-## 🆘 故障排除
+## 🆘 Troubleshooting
 
-### 常见问题
+### Common Issues
 
-1. **模块导入错误**：确保在项目根目录运行
-2. **API调用失败**：检查API key和网络连接
-3. **配置文件错误**：验证YAML语法和路径正确性
-4. **权限问题**：确保有写入输出目录的权限
+1. **Module import errors**: Ensure running from project root directory
+2. **API call failures**: Check API key and network connection
+3. **Configuration file errors**: Verify YAML syntax and path correctness
+4. **Permission issues**: Ensure write permissions for output directory
 
-### 获取帮助
+### Getting Help
 
-- 查看日志文件：`SE/trajectories/*/se_framework.log`
-- 运行测试：`python SE/test/run_operator_tests.py`
-- 查阅详细文档：`SE/test/README.md`
+- View log files: `SE/trajectories/*/se_framework.log`
+- Run tests: `python SE/test/run_operator_tests.py`
+- Consult detailed documentation: `SE/test/README.md`
 
 ---
 
-*开始您的多样性实验之旅！🚀*
+*Start your diversity experimentation journey! 🚀*

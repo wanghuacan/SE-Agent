@@ -1,103 +1,103 @@
-# SE Operators 开发指南
+# SE Operators Development Guide
 
-## 概述
+## Overview
 
-SE Operators 是一个模块化算子系统，用于在SWE-agent迭代间生成增强参数。基于Aeon generators的设计理念，提供统一的接口和强大的基础功能。
+SE Operators is a modular operator system for generating enhanced parameters between SWE-agent iterations. Based on Aeon generators design philosophy, it provides unified interfaces and powerful foundational functionality.
 
-## 架构设计
+## Architecture Design
 
-### 系统组件
+### System Components
 
-1. **BaseOperator**: 算子基类，提供通用功能
-2. **TemplateOperator**: 模板算子，生成系统提示模板
-3. **FilterOperator**: 过滤算子，生成历史过滤配置（待实现）
-4. **OperatorRegistry**: 动态注册系统
+1. **BaseOperator**: Base class for operators, providing common functionality
+2. **TemplateOperator**: Template operator, generating system prompt templates
+3. **FilterOperator**: Filter operator, generating historical filter configurations (to be implemented)
+4. **OperatorRegistry**: Dynamic registration system
 
-### 数据流
+### Data Flow
 
 ```
-迭代1完成 → 迭代2开始前 → 算子处理迭代1数据 → 生成增强参数 → 迭代2执行时使用
+Iteration 1 Complete → Iteration 2 Begins → Operator Processes Iteration 1 Data → Generate Enhanced Parameters → Iteration 2 Executes Using These
 ```
 
-**关键时序**：算子是预处理器，在每次迭代执行前运行，分析之前的迭代数据为当前迭代提供指导。
+**Key Timing**: Operators are preprocessors that run before each iteration execution, analyzing previous iteration data to provide guidance for the current iteration.
 
-**配置示例**：
+**Configuration Example**:
 ```yaml
 strategy:
   iterations:
     - base_config: "baseconfig1.yaml"
-      operator: null                    # 迭代1：直接执行，无算子预处理
+      operator: null                    # Iteration 1: Direct execution, no operator preprocessing
     - base_config: "baseconfig2.yaml"  
-      operator: "alternative_strategy"  # 迭代2：执行前用算子处理迭代1结果
+      operator: "alternative_strategy"  # Iteration 2: Use operator to process iteration 1 results before execution
     - base_config: "baseconfig3.yaml"
-      operator: "traj_pool_summary"     # 迭代3：执行前用算子处理迭代1+2结果
+      operator: "traj_pool_summary"     # Iteration 3: Use operator to process iteration 1+2 results before execution
 ```
 
-## Base类功能详解
+## Base Class Functionality Details
 
-### BaseOperator 核心功能
+### BaseOperator Core Features
 
-#### 1. LLM集成能力
+#### 1. LLM Integration Capability
 ```python
 def _setup_model(self) -> None:
-    """自动设置LLM模型实例"""
-    # 支持operator_models配置，无成本限制
-    # 使用sweagent的模型基础设施
+    """Automatically setup LLM model instance"""
+    # Supports operator_models configuration, no cost limits
+    # Uses sweagent's model infrastructure
 ```
 
-#### 2. 实例发现
+#### 2. Instance Discovery
 ```python
 def _discover_instances(self, workspace_dir: Path, current_iteration: int) -> List[Dict]:
-    """自动发现可处理的实例"""
-    # 查找 iteration_{current_iteration-1} 目录下的 .tra 文件
-    # 返回实例信息列表
+    """Automatically discover processable instances"""
+    # Find .tra files in iteration_{current_iteration-1} directory
+    # Return list of instance information
 ```
 
-#### 3. 数据提取
+#### 3. Data Extraction
 ```python
 def _extract_problem_statement(self, trajectory_data: Dict) -> str:
-    """从轨迹数据提取问题陈述"""
-    # 解析<pr_description>标签内容
+    """Extract problem statement from trajectory data"""
+    # Parse content within <pr_description> tags
 ```
 
-#### 4. 多线程处理
+#### 4. Multi-threaded Processing
 ```python
 def process(self, workspace_dir: str, current_iteration: int, num_workers: int = 1):
-    """并发处理多个实例"""
-    # 使用ThreadPoolExecutor并行处理
+    """Process multiple instances concurrently"""
+    # Use ThreadPoolExecutor for parallel processing
 ```
 
-#### 5. 错误处理与日志
+#### 5. Error Handling and Logging
 ```python
 self.logger = get_se_logger(f"operator.{self.get_name()}", emoji="🔧")
-# 完整的异常捕获和日志记录
+# Complete exception catching and logging
 ```
 
-### TemplateOperator 专用功能
+### TemplateOperator Specialized Features
 
-#### 1. 输出目录管理
+#### 1. Output Directory Management
 ```python
 def _create_output_dir(self, workspace_dir: Path, current_iteration: int) -> Path:
-    """创建 iteration_{current_iteration}/system_prompt/ 目录"""
+    """Create iteration_{current_iteration}/system_prompt/ directory"""
 ```
 
-#### 2. YAML模板生成
+#### 2. YAML Template Generation
 ```python
 def _create_yaml_content(self, strategy_content: str) -> str:
-    """生成标准YAML格式的系统提示"""
-    # 包含agent.templates.system_template结构
+    """Generate standard YAML format system prompts"""
+    # Includes agent.templates.system_template structure
 ```
 
-#### 3. 返回值规范
+#### 3. Return Value Specification
 ```python
 return {'instance_templates_dir': 'path/to/system_prompt/'}
 ```
 
-## 开发新算子指南
+## New Operator Development Guide
 
-### 步骤1: 选择基类
+### Step 1: Choose Base Class
 
-#### 如果生成系统提示模板 → 继承 `TemplateOperator`
+#### If generating system prompt templates → Inherit from `TemplateOperator`
 ```python
 from SE.operators import TemplateOperator
 
@@ -105,7 +105,7 @@ class MyTemplateOperator(TemplateOperator):
     pass
 ```
 
-#### 如果生成其他配置 → 继承 `BaseOperator`
+#### If generating other configurations → Inherit from `BaseOperator`
 ```python
 from SE.operators import BaseOperator
 
@@ -113,32 +113,32 @@ class MyCustomOperator(BaseOperator):
     pass
 ```
 
-### 步骤2: 实现必需方法
+### Step 2: Implement Required Methods
 
-#### 对于 TemplateOperator
+#### For TemplateOperator
 
 ```python
 class MyTemplateOperator(TemplateOperator):
     def get_name(self) -> str:
-        """返回算子名称"""
+        """Return operator name"""
         return "my_template"
     
     def get_strategy_prefix(self) -> str:
-        """返回策略前缀标识"""
+        """Return strategy prefix identifier"""
         return "MY SOLUTION STRATEGY"
     
     def _generate_content(self, instance_info: Dict, problem_statement: str, trajectory_data: Dict) -> str:
-        """生成策略内容（核心逻辑）"""
-        # 这里实现你的算子逻辑
-        # 可以调用 self._call_llm_api() 使用LLM
-        # 可以访问 self.logger 记录日志
+        """Generate strategy content (core logic)"""
+        # Implement your operator logic here
+        # Can call self._call_llm_api() to use LLM
+        # Can access self.logger for logging
         
-        prompt = f"为以下问题生成解决策略：\n{problem_statement}"
+        prompt = f"Generate solution strategy for the following problem:\n{problem_statement}"
         strategy = self._call_llm_api(prompt)
         return strategy
 ```
 
-#### 对于 BaseOperator
+#### For BaseOperator
 
 ```python
 class MyCustomOperator(BaseOperator):
@@ -146,73 +146,73 @@ class MyCustomOperator(BaseOperator):
         return "my_custom"
     
     def _generate_content(self, instance_info: Dict, problem_statement: str, trajectory_data: Dict) -> str:
-        """生成内容"""
+        """Generate content"""
         pass
     
     def process(self, workspace_dir: str, current_iteration: int, num_workers: int = 1) -> Optional[Dict[str, str]]:
-        """完整的处理逻辑"""
-        # 自定义处理流程
-        # 返回相应的参数字典
+        """Complete processing logic"""
+        # Custom processing flow
+        # Return corresponding parameter dictionary
         return {'custom_param': 'value'}
 ```
 
-### 步骤3: 注册算子
+### Step 3: Register Operator
 
 ```python
 from SE.operators import register_operator
 
-# 注册算子
+# Register operator
 register_operator("my_template", MyTemplateOperator)
 ```
 
-### 步骤4: 测试算子
+### Step 4: Test Operator
 
 ```python
-# 使用 operator_dev.py 测试
+# Test using operator_dev.py
 python SE/operator_dev.py --test-llm
 
-# 或创建自定义测试
+# Or create custom tests
 from SE.operators import create_operator
 
-config = {...}  # 配置字典
+config = {...}  # Configuration dictionary
 operator = create_operator("my_template", config)
 result = operator.process(workspace_dir, current_iteration, num_workers)
 ```
 
-## 具体算子实现示例
+## Specific Operator Implementation Examples
 
-### 现有算子总览
+### Existing Operators Overview
 
-| 算子名称 | 功能 | 数据源 | 输出前缀 | 适用时机 |
-|---------|------|--------|----------|----------|
-| `alternative_strategy` | 生成替代解决方案 | 最近一次失败尝试 | ALTERNATIVE SOLUTION STRATEGY | 迭代2（基于迭代1失败） |
-| `traj_pool_summary` | 风险感知综合分析 | 所有历史尝试 | RISK-AWARE PROBLEM SOLVING GUIDANCE | 迭代3+（综合历史分析） |
+| Operator Name | Function | Data Source | Output Prefix | Applicable Timing |
+|---------------|----------|-------------|---------------|-------------------|
+| `alternative_strategy` | Generate alternative solutions | Most recent failed attempt | ALTERNATIVE SOLUTION STRATEGY | Iteration 2 (based on iteration 1 failure) |
+| `traj_pool_summary` | Risk-aware comprehensive analysis | All historical attempts | RISK-AWARE PROBLEM SOLVING GUIDANCE | Iteration 3+ (comprehensive historical analysis) |
 
-### 算子执行时序详解
+### Operator Execution Timing Details
 
 ```
-时间线：
-T1: 执行迭代1 (baseconfig1.yaml, operator: null)
-    → 产生迭代1的轨迹和traj.pool数据
+Timeline:
+T1: Execute iteration 1 (baseconfig1.yaml, operator: null)
+    → Produces iteration 1 trajectories and traj.pool data
 
-T2: 算子预处理 (alternative_strategy处理迭代1数据)
-    → 生成 iteration_2/system_prompt/*.yaml
-    → 执行迭代2 (baseconfig2.yaml + 算子生成的系统提示)
-    → 产生迭代2的轨迹和traj.pool数据
+T2: Operator preprocessing (alternative_strategy processes iteration 1 data)
+    → Generate iteration_2/system_prompt/*.yaml
+    → Execute iteration 2 (baseconfig2.yaml + operator-generated system prompts)
+    → Produces iteration 2 trajectories and traj.pool data
 
-T3: 算子预处理 (traj_pool_summary处理迭代1+2数据)
-    → 生成 iteration_3/system_prompt/*.yaml  
-    → 执行迭代3 (baseconfig3.yaml + 算子生成的系统提示)
+T3: Operator preprocessing (traj_pool_summary processes iteration 1+2 data)
+    → Generate iteration_3/system_prompt/*.yaml  
+    → Execute iteration 3 (baseconfig3.yaml + operator-generated system prompts)
 ```
 
-**核心原则**：
-- 算子在迭代执行**前**运行，作为预处理器
-- 算子分析**之前所有迭代**的数据
-- 算子为**当前迭代**生成增强的系统提示
+**Core Principles**:
+- Operators run **before** iteration execution, as preprocessors
+- Operators analyze data from **all previous iterations**
+- Operators generate enhanced system prompts for **current iteration**
 
-### 示例1: AlternativeStrategy算子
+### Example 1: AlternativeStrategy Operator
 
-基于最近一次失败尝试生成正交的替代策略：
+Generate orthogonal alternative strategies based on most recent failed attempt:
 
 ```python
 class AlternativeStrategyOperator(TemplateOperator):
@@ -223,7 +223,7 @@ class AlternativeStrategyOperator(TemplateOperator):
         return "ALTERNATIVE SOLUTION STRATEGY"
     
     def _generate_content(self, instance_info, problem_statement, trajectory_data):
-        # 加载traj.pool获取失败方法
+        # Load traj.pool to get failed methods
         instance_dir = instance_info['instance_dir']
         previous_iteration = instance_info['previous_iteration']
         
@@ -233,24 +233,24 @@ class AlternativeStrategyOperator(TemplateOperator):
         if not previous_approach:
             return ""
         
-        # 生成替代策略
+        # Generate alternative strategy
         return self._generate_alternative_strategy(problem_statement, previous_approach)
     
     def _load_traj_pool(self, instance_dir: Path) -> Dict[str, str]:
-        """加载策略池"""
-        # 实现traj.pool加载逻辑
+        """Load strategy pool"""
+        # Implement traj.pool loading logic
         pass
     
     def _generate_alternative_strategy(self, problem_statement: str, previous_approach: str) -> str:
-        """使用LLM生成替代策略"""
-        system_prompt = """你是软件工程策略专家..."""
-        prompt = f"""生成替代策略：\n问题：{problem_statement}\n失败方法：{previous_approach}"""
+        """Use LLM to generate alternative strategy"""
+        system_prompt = """You are a software engineering strategy expert..."""
+        prompt = f"""Generate alternative strategy:\nProblem: {problem_statement}\nFailed method: {previous_approach}"""
         return self._call_llm_api(prompt, system_prompt)
 ```
 
-### 示例2: TrajPoolSummary算子
+### Example 2: TrajPoolSummary Operator
 
-基于所有历史尝试生成风险感知指导：
+Generate risk-aware guidance based on all historical attempts:
 
 ```python
 class TrajPoolSummaryOperator(TemplateOperator):
@@ -261,28 +261,28 @@ class TrajPoolSummaryOperator(TemplateOperator):
         return "RISK-AWARE PROBLEM SOLVING GUIDANCE"
     
     def _generate_content(self, instance_info, problem_statement, trajectory_data):
-        # 加载所有历史尝试数据
+        # Load all historical attempt data
         approaches_data = self._load_traj_pool(instance_info['instance_dir'])
         
-        # 生成风险感知指导（控制在200字内）
+        # Generate risk-aware guidance (keep within 200 words)
         guidance = self._generate_risk_aware_guidance(problem_statement, approaches_data)
         return guidance
     
     def _generate_risk_aware_guidance(self, problem_statement: str, approaches_data: Dict) -> str:
-        """生成简洁的风险感知指导"""
-        # 使用LLM分析历史失败模式，生成盲区识别和风险规避策略
-        # 输出格式：BLIND SPOTS TO AVOID + CRITICAL RISKS + STRATEGIC APPROACH
+        """Generate concise risk-aware guidance"""
+        # Use LLM to analyze historical failure patterns, generate blind spot identification and risk avoidance strategies
+        # Output format: BLIND SPOTS TO AVOID + CRITICAL RISKS + STRATEGIC APPROACH
         pass
 ```
 
-## 配置要求
+## Configuration Requirements
 
-### operator_models配置
+### operator_models Configuration
 
-在配置文件中添加算子专用的模型配置：
+Add operator-specific model configuration in config file:
 
 ```yaml
-# SE配置文件
+# SE configuration file
 operator_models:
   name: "anthropic/claude-sonnet-4-20250514"
   api_base: "your_api_base"
@@ -290,15 +290,15 @@ operator_models:
   temperature: 0.0
   max_output_tokens: 4000
 
-# 或使用默认model配置
+# Or use default model configuration
 model:
   name: "openai/deepseek-chat"
   # ...
 ```
 
-### 迭代配置
+### Iteration Configuration
 
-在strategy配置中使用算子：
+Use operators in strategy configuration:
 
 ```yaml
 strategy:
@@ -306,113 +306,113 @@ strategy:
     - base_config: "SE/configs/base_configs/baseconfig1.yaml"
       operator: null
     - base_config: "SE/configs/base_configs/baseconfig2.yaml"
-      operator: "alternative_strategy"  # 使用注册的算子名称
+      operator: "alternative_strategy"  # Use registered operator name
 ```
 
-## 最佳实践
+## Best Practices
 
-### 1. 日志使用
+### 1. Logging Usage
 ```python
-self.logger.info("开始处理实例")
-self.logger.debug("详细调试信息")
-self.logger.warning("警告信息")
-self.logger.error("错误信息")
+self.logger.info("Starting instance processing")
+self.logger.debug("Detailed debug information")
+self.logger.warning("Warning information")
+self.logger.error("Error information")
 ```
 
-### 2. 错误处理
+### 2. Error Handling
 ```python
 try:
     result = self._some_operation()
 except Exception as e:
-    self.logger.error(f"操作失败: {e}")
+    self.logger.error(f"Operation failed: {e}")
     return None
 ```
 
-### 3. LLM调用
+### 3. LLM Calls
 ```python
-# 简单调用
+# Simple call
 response = self._call_llm_api(prompt)
 
-# 带系统提示调用
+# Call with system prompt
 response = self._call_llm_api(prompt, system_prompt)
 
-# 检查响应
+# Check response
 if not response:
-    self.logger.warning("LLM调用失败")
+    self.logger.warning("LLM call failed")
     return default_content
 ```
 
-### 4. 性能优化
-- 算子内部已支持多线程，无需额外优化
-- LLM调用会自动重用模型实例
-- 使用logger.debug()记录详细信息，避免过度打印
+### 4. Performance Optimization
+- Operators internally support multi-threading, no additional optimization needed
+- LLM calls automatically reuse model instances
+- Use logger.debug() for detailed information, avoid excessive printing
 
-## 调试技巧
+## Debugging Tips
 
-### 1. 使用开发脚本
+### 1. Use Development Scripts
 ```bash
-# 测试算子基础功能
+# Test operator basic functionality
 python SE/operator_dev.py
 
-# 测试LLM连接
+# Test LLM connection
 python SE/operator_dev.py --test-llm
 
-# 指定配置文件
+# Specify configuration file
 python SE/operator_dev.py --config custom_config.yaml
 ```
 
-### 2. 查看日志
+### 2. View Logs
 ```bash
-# 日志文件位置
+# Log file location
 SE/trajectories/operator_dev_test/test_*/se_framework.log
 ```
 
-### 3. 检查输出文件
+### 3. Check Output Files
 ```bash
-# 模板文件位置
+# Template file location
 SE/trajectories/*/iteration_*/system_prompt/*.yaml
 ```
 
-## 常见问题
+## Common Issues
 
-### Q: 如何访问历史策略数据？
-A: 使用`_load_traj_pool()`方法加载traj.pool文件，包含所有历史策略。
+### Q: How to access historical strategy data?
+A: Use `_load_traj_pool()` method to load traj.pool file, which contains all historical strategies.
 
-### Q: 如何处理LLM调用失败？
-A: `_call_llm_api()`失败时返回空字符串，应提供默认策略或跳过该实例。
+### Q: How to handle LLM call failures?
+A: `_call_llm_api()` returns empty string when failing, should provide default strategy or skip that instance.
 
-### Q: 如何自定义输出格式？
-A: 继承BaseOperator并重写`process()`方法，返回自定义的参数字典。
+### Q: How to customize output format?
+A: Inherit from BaseOperator and override `process()` method, return custom parameter dictionary.
 
-### Q: 如何添加新的数据源？
-A: 在`_generate_content()`中添加自定义的数据加载逻辑。
+### Q: How to add new data sources?
+A: Add custom data loading logic in `_generate_content()`.
 
-## 扩展功能
+## Extended Features
 
-### 1. 自定义数据提取
+### 1. Custom Data Extraction
 ```python
 def _extract_custom_data(self, trajectory_data: Dict) -> Any:
-    """提取自定义数据"""
-    # 实现特定的数据提取逻辑
+    """Extract custom data"""
+    # Implement specific data extraction logic
     pass
 ```
 
-### 2. 多阶段策略生成
+### 2. Multi-stage Strategy Generation
 ```python
 def _generate_content(self, instance_info, problem_statement, trajectory_data):
-    # 阶段1：分析
+    # Stage 1: Analysis
     analysis = self._analyze_problem(problem_statement)
     
-    # 阶段2：策略生成
+    # Stage 2: Strategy generation
     strategy = self._generate_strategy(analysis)
     
-    # 阶段3：优化
+    # Stage 3: Optimization
     optimized_strategy = self._optimize_strategy(strategy)
     
     return optimized_strategy
 ```
 
-### 3. 条件式处理
+### 3. Conditional Processing
 ```python
 def _generate_content(self, instance_info, problem_statement, trajectory_data):
     if self._is_bug_fix(problem_statement):
@@ -423,4 +423,4 @@ def _generate_content(self, instance_info, problem_statement, trajectory_data):
         return self._generate_general_strategy(...)
 ```
 
-这个指南提供了完整的算子开发流程和最佳实践。基于这个框架，你可以快速开发各种专门化的算子来增强SWE-agent的迭代能力。
+This guide provides a complete operator development process and best practices. Based on this framework, you can quickly develop various specialized operators to enhance SWE-agent's iterative capabilities.
